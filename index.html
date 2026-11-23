@@ -70,27 +70,30 @@
         v.pause();
     });
 
-    // Если браузер не может прочитать видео — показываем ошибку
     v.addEventListener('error', () => {
         errBox.style.display = 'block';
-        cursor = 'default';
     });
 
     v.play().catch(() => {});
 
     function goFullscreen() {
-        if (document.fullscreenElement) return;
+        // Если уже на весь экран — ничего не делаем
+        if (document.fullscreenElement || document.webkitFullscreenElement) return;
+        
         const el = document.documentElement;
         if (el.requestFullscreen) {
             el.requestFullscreen().catch(() => {});
         } else if (el.webkitRequestFullscreen) {
             el.webkitRequestFullscreen();
+        } else if (el.msRequestFullscreen) {
+            el.msRequestFullscreen();
         }
     }
 
-    ['click', 'touchstart', 'keydown', 'mousemove'].forEach(ev => {
-        document.addEventListener(ev, goFullscreen, { once: true });
-    });
+    // Вызываем фуллскрин только по реальному действию пользователя (клик, тап или клавиша)
+    document.addEventListener('click', goFullscreen);
+    document.addEventListener('touchstart', goFullscreen);
+    document.addEventListener('keydown', goFullscreen);
 </script>
 
 </body>
