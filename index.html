@@ -2,78 +2,80 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Video</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title></title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background: #000;
-    cursor: none; /* Скрываем курсор */
-  }
-  video {
-    position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: contain; /* contain = видео целиком. Если нужно на весь экран с обрезкой, замени на cover */
-    pointer-events: none; /* Запрещаем клики по видео */
-    background: #000;
-  }
+    /* Сброс отступов и черный фон */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+        width: 100%; height: 100%;
+        background: #000;
+        overflow: hidden; /* Запрет прокрутки */
+        cursor: none; /* Скрываем курсор мыши */
+        user-select: none; /* Запрет выделения текста */
+    }
+    
+    /* Видео на весь экран */
+    #player {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        width: 100vw; height: 100vh;
+        object-fit: cover; /* Заполняет весь экран, обрезая края, если надо */
+        background: #000;
+        pointer-events: none; /* Запрет кликов по видео */
+        outline: none;
+    }
 </style>
 </head>
 <body>
 
-<video id="v"
-       src="vid.mov"
-       autoplay
-       muted
-       playsinline
-       preload="auto"
-       disablepictureinpicture></video>
+<!-- ВАЖНО: Проверь имя файла! Если он называется vid.mov, напиши src="./vid.mov" -->
+<video id="player"
+    src="./vid.mp4"
+    autoplay
+    muted
+    playsinline
+    preload="auto"
+    disablepictureinpicture
+    disableremoteplayback></video>
 
 <script>
-  const v = document.getElementById('v');
+    const v = document.getElementById('player');
 
-  // Принудительная тишина и отключение управления
-  v.muted = true;
-  v.volume = 0;
-  v.controls = false;
-  v.loop = false;
-  v.setAttribute('controlslist', 'nodownload noplaybackrate nofullscreen');
+    // Отключаем любые элементы управления и звук
+    v.controls = false;
+    v.loop = false;
+    v.muted = true;
+    v.volume = 0;
+    v.defaultMuted = true;
 
-  // Запуск видео
-  const p = v.play();
-  if (p && p.catch) p.catch(() => {});
+    // Запрещаем правый клик (контекстное меню)
+    document.addEventListener('contextmenu', e => e.preventDefault());
 
-  // Остановка в самом конце на последнем кадре
-  v.addEventListener('ended', () => {
-    v.dataset.done = '1';
-    v.pause();
-    v.currentTime = Math.max(0, v.duration - 0.001); 
-  }, { once: true });
+    // Когда видео заканчивается — оно просто замирает на последнем кадре
+    v.addEventListener('ended', () => {
+        v.pause();
+    });
 
-  // Блокировка повторного включения
-  v.addEventListener('play', () => {
-    if (v.dataset.done === '1') v.pause();
-  });
+    // Запуск видео
+    v.play().catch(() => {});
 
-  // Запрет правого клика и перетаскивания
-  document.addEventListener('contextmenu', e => e.preventDefault());
-  v.addEventListener('dragstart', e => e.preventDefault());
+    // Функция для разворота на весь экран
+    function goFullscreen() {
+        if (document.fullscreenElement) return;
+        const el = document.documentElement;
+        if (el.requestFullscreen) {
+            el.requestFullscreen().catch(() => {});
+        } else if (el.webkitRequestFullscreen) {
+            el.webkitRequestFullscreen();
+        }
+    }
 
-  // Включение полноэкранного режима при первом клике/тапе
-  function goFullscreen() {
-    const el = document.documentElement;
-    if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
-    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-    document.removeEventListener('click', goFullscreen);
-    document.removeEventListener('touchstart', goFullscreen);
-  }
-  document.addEventListener('click', goFullscreen);
-  document.addEventListener('touchstart', goFullscreen);
+    // Браузеры не дают открывать фуллскрин без действия пользователя.
+    // Поэтому мы ждем первого движения мыши, клика или нажатия клавиши.
+    ['click', 'touchstart', 'keydown', 'mousemove'].forEach(ev => {
+        document.addEventListener(ev, goFullscreen, { once: true });
+    });
 </script>
 
 </body>
