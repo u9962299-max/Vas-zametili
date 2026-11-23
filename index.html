@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Video</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    cursor: none; /* Скрываем курсор */
+  }
+  video {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* contain = видео целиком. Если нужно на весь экран с обрезкой, замени на cover */
+    pointer-events: none; /* Запрещаем клики по видео */
+    background: #000;
+  }
+</style>
+</head>
+<body>
+
+<video id="v"
+       src="vid.mov"
+       autoplay
+       muted
+       playsinline
+       preload="auto"
+       disablepictureinpicture></video>
+
+<script>
+  const v = document.getElementById('v');
+
+  // Принудительная тишина и отключение управления
+  v.muted = true;
+  v.volume = 0;
+  v.controls = false;
+  v.loop = false;
+  v.setAttribute('controlslist', 'nodownload noplaybackrate nofullscreen');
+
+  // Запуск видео
+  const p = v.play();
+  if (p && p.catch) p.catch(() => {});
+
+  // Остановка в самом конце на последнем кадре
+  v.addEventListener('ended', () => {
+    v.dataset.done = '1';
+    v.pause();
+    v.currentTime = Math.max(0, v.duration - 0.001); 
+  }, { once: true });
+
+  // Блокировка повторного включения
+  v.addEventListener('play', () => {
+    if (v.dataset.done === '1') v.pause();
+  });
+
+  // Запрет правого клика и перетаскивания
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  v.addEventListener('dragstart', e => e.preventDefault());
+
+  // Включение полноэкранного режима при первом клике/тапе
+  function goFullscreen() {
+    const el = document.documentElement;
+    if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    document.removeEventListener('click', goFullscreen);
+    document.removeEventListener('touchstart', goFullscreen);
+  }
+  document.addEventListener('click', goFullscreen);
+  document.addEventListener('touchstart', goFullscreen);
+</script>
+
+</body>
+</html>
